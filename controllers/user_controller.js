@@ -83,7 +83,7 @@ exports.getProfile = async(req, res, next) => {
 
 exports.getUsers = async(req, res, next) => {
     try {
-        const users = await User.find();
+        const users = await User.find().populate('borrow');
         res.status(200).json(users)
     } catch (error) {
         next(error)
@@ -182,7 +182,6 @@ exports.updateUser = async(req, res, next) => {
                 user.role = role;
 
             }
-            console.log("password :" + password);
 
 
             if (password !== '') {

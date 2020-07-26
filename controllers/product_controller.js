@@ -30,8 +30,8 @@ exports.getProduct = async(req, res, next) => {
 exports.addProduct = async(req, res, next) => {
     try {
 
-        const { p_Id, name_p, stock, detail } = req.body;
-
+        const { p_Id, name_p, stock, detail, category } = req.body;
+        console.log(category);
         if (req.file !== undefined) {
             var imageName = req.file.filename;
         } else {
@@ -43,6 +43,7 @@ exports.addProduct = async(req, res, next) => {
         product.name_p = name_p;
         product.stock = stock;
         product.detail = detail;
+        product.category = category;
         product.image = `${config.IMAGEPRODUCT_URL}${imageName}` || 'no-image.png';
 
         await product.save()
@@ -56,11 +57,47 @@ exports.addProduct = async(req, res, next) => {
     }
 }
 
+exports.updateProduct = async(req, res, next) => {
+    try {
+        const { p_Id, name_p, stock, detail, category } = req.body;
+
+        const product = await Product.findByIdAndUpdate(req.params.id);
+
+        if (product) {
+            if (req.file !== undefined) {
+                var imageName = req.file.filename;
+                product.p_Id = p_Id;
+                product.name_p = name_p;
+                product.stock = stock;
+                product.detail = detail;
+                product.category = category;
+                product.image = `${config.IMAGEPRODUCT_URL}${imageName}` || 'no-image.png';
+            } else {
+                product.p_Id = p_Id;
+                product.name_p = name_p;
+                product.stock = stock;
+                product.detail = detail;
+                product.category = category;
+
+            }
+
+            await product.save()
+
+            res.status(201).json({
+                message: 'แก้ไขข้อมูลเรียบร้อย'
+            })
+        }
+
+    } catch (error) {
+        next(error)
+    }
+}
+
 exports.getTotal = async(req, res, next) => {
     try {
-        const productTotal = await Product.find();
-        if (productTotal) {
-            res.status(201).json(productTotal.length)
+        const productAll = await Product.find();
+        if (productAll) {
+            res.status(201).json(productAll)
         }
     } catch (error) {
         next(error)

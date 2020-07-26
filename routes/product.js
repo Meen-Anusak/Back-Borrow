@@ -12,6 +12,8 @@ router.post('/', [token.isLogin], upload, product_controller.addProduct);
 
 router.get('/total', product_controller.getTotal);
 
-router.get('/:id', product_controller.getProductById)
+router.get('/:id', product_controller.getProductById);
+
+router.put('/:id', [token.isLogin], upload, product_controller.updateProduct);
 
 module.exports = router;

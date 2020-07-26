@@ -35,8 +35,11 @@ const userSchema = Schema({
         default: 'Student'
     }
 }, {
-    timestamps: true
+    toJSON: { virtuals: true },
+    timestamps: true,
+    collection: 'cce-users'
 })
+
 
 
 
@@ -49,5 +52,6 @@ userSchema.methods.checkPassword = async(password, hash) => {
     const isMatch = await bcrypt.compare(password, hash);
     return isMatch;
 }
-const User = mongoose.model('cce-users', userSchema);
+
+const User = mongoose.model('users', userSchema);
 module.exports = User;

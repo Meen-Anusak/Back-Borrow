@@ -10,8 +10,9 @@ const config = require('./configs/evn');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const productRouter = require('./routes/product');
+const borrowRouter = require('./routes/borrow');
 
-const error = require('./middleware/errorHendel')
+const error = require('./middleware/errorHendel');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/product', productRouter);
+app.use('/api/borrow', borrowRouter);
 
 app.use(error);
 

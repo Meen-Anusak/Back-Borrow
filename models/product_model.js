@@ -27,12 +27,13 @@ const productSchema = Schema({
         type: Number
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    collection: 'product_cces'
 })
 
 productSchema.plugin(aggregatePaginate);
 productSchema.index({ name_p: 'text' })
 
-const Product = mongoose.model('product_cce', productSchema);
+const Product = mongoose.model('product', productSchema);
 
 module.exports = Product;
