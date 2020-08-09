@@ -1,4 +1,5 @@
 const Borrow = require('../models/borrow_model');
+const { log } = require('debug');
 
 
 exports.getItem = async(req, res, next) => {
@@ -118,6 +119,14 @@ exports.DeleteItem = async(req, res, next) => {
         } else {
             res.status(404).json({ message: 'unauthorized' })
         }
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.DeleteList = async(req,res,next)=>{
+    try {
+        console.log(req.body)
     } catch (error) {
         next(error)
     }
