@@ -13,5 +13,7 @@ router.get('/', [token.isLogin], borrow_controller.getItemByUser);
 router.post('/removeItem', [token.isLogin], borrow_controller.RemoveItem);
 
 router.post('/deleteItem', [token.isLogin], borrow_controller.DeleteItem);
+router.post('/deleteList',[token.isLogin],borrow_controller.DeleteList);
+
 
 module.exports = router;

@@ -20,7 +20,7 @@ exports.getItem = async(req, res, next) => {
 exports.addItem = async(req, res, next) => {
     try {
 
-        const { p_id, _id, qty, } = req.body;
+        const {_id } = req.body;
         const user_id = req.user;
         let data = { p_id: _id }
 
@@ -104,29 +104,22 @@ exports.RemoveItem = async(req, res, next) => {
 }
 
 exports.DeleteItem = async(req, res, next) => {
-    try {
-        const { _id } = req.body;
-        const user_id = req.user;
-        console.log(req.user);
-        const checkuser = await Borrow.findOne({ user: user_id }); //ค้าหา user
+    const {_id } = req.body;
+    const user_id = req.user;
+    
+    const checkuser = await Borrow.findOne({user:user_id});
 
-        if (checkuser != null) {
-
-            await Borrow.updateOne({ user: user_id }, { items: { $pull: { $elemMatch: { p_id: _id } } } });
-
-            res.status(200).json({ message: 'ลบอุปกรณ์เรียบร้อย' })
-
-        } else {
-            res.status(404).json({ message: 'unauthorized' })
-        }
-    } catch (error) {
-        next(error)
+    if(checkuser != null){
+        await Borrow.updateOne({$pull:{items:{p_id:_id}}})
+        res.status(200).json({message:'ลบอุปกรณ์เรียบร้อย'})
     }
 }
 
 exports.DeleteList = async(req,res,next)=>{
     try {
-        console.log(req.body)
+        const user_id = req.user;
+        await Borrow.findOneAndDelete({ user: user_id }); //ค้าหา user
+        res.status(200).json({message:'ลบรายการเรียบร้อย'})
     } catch (error) {
         next(error)
     }

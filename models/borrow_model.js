@@ -20,6 +20,10 @@ const borrowSchema = Schema({
             default: 1
         }
     }],
+    status:{
+        type:String,
+        default:0
+    }
 
 }, {
     timestamps: true,
