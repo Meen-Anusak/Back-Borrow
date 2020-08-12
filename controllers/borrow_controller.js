@@ -1,5 +1,4 @@
 const Borrow = require('../models/borrow_model');
-const { log } = require('debug');
 
 
 exports.getItem = async(req, res, next) => {
@@ -63,9 +62,14 @@ exports.getItemByUser = async(req, res, next) => {
             path: 'items',
             populate: { path: 'p_id' },
         });
-        let data = item.items
-
-        res.status(200).json(data)
+        let data_items = item.items
+        let num = await data_items.map((s)=>{
+            return s.qty
+        })
+       let total =  await num.reduce((sum,number)=>{
+            return sum + number
+        },0)
+        res.status(200).json({data:{data_items,total}})
 
     } catch (error) {
         next(error)
