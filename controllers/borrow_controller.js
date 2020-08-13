@@ -18,22 +18,21 @@ exports.getItem = async(req, res, next) => {
 
 exports.addItem = async(req, res, next) => {
     try {
-
-        const {_id } = req.body;
+        const {_id,product_id } = req.body;
         const user_id = req.user;
         let data = { p_id: _id }
 
         const checkuser = await Borrow.findOne({ user: user_id }); //ค้าหา user
-        const borrow = await Borrow.find()
-        console.log(checkuser);
-        if (checkuser != null) {
- 
-            let checkItem = await Borrow.findOne({ user: user_id }, { items: { $elemMatch: { p_id: _id } } });
+        const checkBorrow = await Borrow.findOne().where({status:"0"});
+
+        if (checkuser != null && checkBorrow != null) {
+
+            let checkItem = await Borrow.findOne({ user: user_id}, { items: { $elemMatch: { p_id: _id } } }).where({status:"0"});
 
             let [dataI] = checkItem.items
           
             if (dataI == undefined) {
-                let item = await Borrow.updateMany({ _id: checkuser._id }, { $push: { items: data } }).exec() //เพิ่มอุปกรณ์
+                let item = await Borrow.updateMany({ _id: checkItem._id  }, { $push: { items: data } }) //เพิ่มอุปกรณ์
                 if (item) {
                     res.json({ message: 'เพิ่มอุปกรณ์' })
                 }
@@ -42,7 +41,7 @@ exports.addItem = async(req, res, next) => {
                     await checkItem.save();
                 res.json({ message: 'เพิ่มอุปกรณ์ + 1' })
             }
-        } else  {
+        } else if(checkBorrow == null) {
             // สร้างรายการใหม่
             let item = new Borrow();
             item.user = user_id;
@@ -122,8 +121,8 @@ exports.DeleteItem = async(req, res, next) => {
 
 exports.DeleteList = async(req,res,next)=>{
     try {
-        const user_id = req.user;
-        await Borrow.findOneAndDelete({ user: user_id }); //ค้าหา user
+       const {_id} = req.body;
+        await Borrow.findOneAndDelete({_id : _id}); //ค้าหา user
         res.status(200).json({message:'ลบรายการเรียบร้อย'})
     } catch (error) {
         next(error)
@@ -150,16 +149,21 @@ exports.waitBorrow = async(req,res,next)=>{
             path: 'items',
             populate: { path: 'p_id' },
         });
-        const product_id = item._id
-        const user = item.user;
-        let data_items = item.items
-        let num = await data_items.map((s)=>{
-            return s.qty
-        })
-       let total =  await num.reduce((sum,number)=>{
-            return sum + number
-        },0)
-        res.status(200).json({data:{data_items,total,product_id,user}})
+        if(!item){
+            res.status(200).json({message:'ยังไม่มีรายการ'})
+        }else{
+            const product_id = item._id
+            const user = item.user;
+            let data_items = item.items
+            let num = await data_items.map((s)=>{
+                return s.qty
+            })
+           let total =  await num.reduce((sum,number)=>{
+                return sum + number
+            },0)
+            res.status(200).json({data:{data_items,total,product_id,user}})
+        }
+       
     } catch (error) {
         next(error)
     }
