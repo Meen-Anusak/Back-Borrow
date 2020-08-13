@@ -24,14 +24,14 @@ exports.addItem = async(req, res, next) => {
         let data = { p_id: _id }
 
         const checkuser = await Borrow.findOne({ user: user_id }); //ค้าหา user
-
+        const borrow = await Borrow.find()
+        console.log(checkuser);
         if (checkuser != null) {
-
+ 
             let checkItem = await Borrow.findOne({ user: user_id }, { items: { $elemMatch: { p_id: _id } } });
 
             let [dataI] = checkItem.items
-
-
+          
             if (dataI == undefined) {
                 let item = await Borrow.updateMany({ _id: checkuser._id }, { $push: { items: data } }).exec() //เพิ่มอุปกรณ์
                 if (item) {
@@ -42,7 +42,7 @@ exports.addItem = async(req, res, next) => {
                     await checkItem.save();
                 res.json({ message: 'เพิ่มอุปกรณ์ + 1' })
             }
-        } else {
+        } else  {
             // สร้างรายการใหม่
             let item = new Borrow();
             item.user = user_id;
@@ -58,10 +58,11 @@ exports.addItem = async(req, res, next) => {
 
 exports.getItemByUser = async(req, res, next) => {
     try {
-        const item = await Borrow.findOne({ user: req.user }).populate('user', '-password -_id').populate({
+        const item = await Borrow.findOne({ user: req.user,status:"0" }).populate('user', '-password -_id').populate({
             path: 'items',
             populate: { path: 'p_id' },
         });
+        const product_id = item._id
         let data_items = item.items
         let num = await data_items.map((s)=>{
             return s.qty
@@ -69,7 +70,7 @@ exports.getItemByUser = async(req, res, next) => {
        let total =  await num.reduce((sum,number)=>{
             return sum + number
         },0)
-        res.status(200).json({data:{data_items,total}})
+        res.status(200).json({data:{data_items,total,product_id}})
 
     } catch (error) {
         next(error)
@@ -124,6 +125,41 @@ exports.DeleteList = async(req,res,next)=>{
         const user_id = req.user;
         await Borrow.findOneAndDelete({ user: user_id }); //ค้าหา user
         res.status(200).json({message:'ลบรายการเรียบร้อย'})
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.borrow = async(req,res,next)=>{
+    try {
+        const {productId} = req.body;
+        const item = await Borrow.findOne({ _id: productId }).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        item.status = 1;
+        await item.save();
+        res.status(200).json({message:'ทำการยืม/รออนุมัติ'})
+    } catch (error) {
+        next(error)
+    }
+}
+exports.waitBorrow = async(req,res,next)=>{
+    try {
+        const item = await Borrow.findOne({ user: req.user,status:"1" }).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        const product_id = item._id
+        const user = item.user;
+        let data_items = item.items
+        let num = await data_items.map((s)=>{
+            return s.qty
+        })
+       let total =  await num.reduce((sum,number)=>{
+            return sum + number
+        },0)
+        res.status(200).json({data:{data_items,total,product_id,user}})
     } catch (error) {
         next(error)
     }
