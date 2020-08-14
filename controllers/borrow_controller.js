@@ -18,7 +18,7 @@ exports.getItem = async(req, res, next) => {
 
 exports.addItem = async(req, res, next) => {
     try {
-        const {_id,product_id } = req.body;
+        const {_id } = req.body;
         const user_id = req.user;
         let data = { p_id: _id }
 
@@ -61,16 +61,24 @@ exports.getItemByUser = async(req, res, next) => {
             path: 'items',
             populate: { path: 'p_id' },
         });
-        const product_id = item._id
-        let data_items = item.items
-        let num = await data_items.map((s)=>{
-            return s.qty
-        })
-       let total =  await num.reduce((sum,number)=>{
-            return sum + number
-        },0)
-        res.status(200).json({data:{data_items,total,product_id}})
-
+        
+        if(!item){
+            const error = new Error('ยังไม่มีรายการ')
+            error.statusCode = 500
+            throw error;
+           
+        }else{
+            const product_id = item._id;
+            console.log(item._id)
+            let data_items = item.items
+            let num = await data_items.map((s)=>{
+                return s.qty
+            })
+           let total =  await num.reduce((sum,number)=>{
+                return sum + number
+            },0)
+            res.status(200).json({data:{data_items,total,product_id}})
+        }
     } catch (error) {
         next(error)
     }
@@ -136,9 +144,16 @@ exports.borrow = async(req,res,next)=>{
             path: 'items',
             populate: { path: 'p_id' },
         });
-        item.status = 1;
-        await item.save();
-        res.status(200).json({message:'ทำการยืม/รออนุมัติ'})
+       
+        if(!item){
+            const error = new Error('ยังไม่มีรายการ')
+            error.statusCode = 404;
+            throw error; 
+        }else{
+            item.status = 1;
+            await item.save();
+            res.status(200).json({message:'ทำการยืม/รออนุมัติ'})
+        }
     } catch (error) {
         next(error)
     }
@@ -150,7 +165,9 @@ exports.waitBorrow = async(req,res,next)=>{
             populate: { path: 'p_id' },
         });
         if(!item){
-            res.status(200).json({message:'ยังไม่มีรายการ'})
+            const error = new Error('ไม่พบรายการ');
+            error.status_code = 404;
+            throw error;
         }else{
             const product_id = item._id
             const user = item.user;
