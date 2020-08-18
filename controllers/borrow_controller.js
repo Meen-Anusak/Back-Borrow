@@ -22,16 +22,15 @@ exports.addItem = async(req, res, next) => {
         const user_id = req.user;
         let data = { p_id: _id }
 
-        const checkuser = await Borrow.findOne({ user: user_id }); //ค้าหา user
-        const checkBorrow = await Borrow.findOne().where({status:"0"});
-
-        if (checkuser != null && checkBorrow != null) {
+        const checkBorrow = await Borrow.findOne({user:user_id}).where({status:"0"});
+        console.log(checkBorrow)
+        if (checkBorrow) {
 
             let checkItem = await Borrow.findOne({ user: user_id}, { items: { $elemMatch: { p_id: _id } } }).where({status:"0"});
-
+            console.log(checkItem)
             let [dataI] = checkItem.items
-          
-            if (dataI == undefined) {
+            
+            if (dataI === undefined) {
                 let item = await Borrow.updateMany({ _id: checkItem._id  }, { $push: { items: data } }) //เพิ่มอุปกรณ์
                 if (item) {
                     res.json({ message: 'เพิ่มอุปกรณ์' })
@@ -41,7 +40,7 @@ exports.addItem = async(req, res, next) => {
                     await checkItem.save();
                 res.json({ message: 'เพิ่มอุปกรณ์ + 1' })
             }
-        } else if(checkBorrow == null) {
+        } else if(!checkBorrow) {
             // สร้างรายการใหม่
             let item = new Borrow();
             item.user = user_id;
@@ -116,13 +115,13 @@ exports.RemoveItem = async(req, res, next) => {
 }
 
 exports.DeleteItem = async(req, res, next) => {
-    const {_id } = req.body;
+    const {_id,p_id } = req.body;
     const user_id = req.user;
     
     const checkuser = await Borrow.findOne({user:user_id});
 
     if(checkuser != null){
-        await Borrow.updateOne({$pull:{items:{p_id:_id}}})
+        await Borrow.updateOne({_id:p_id},{$pull:{items:{p_id:_id}}})
         res.status(200).json({message:'ลบอุปกรณ์เรียบร้อย'})
     }
 }
@@ -144,12 +143,17 @@ exports.borrow = async(req,res,next)=>{
             path: 'items',
             populate: { path: 'p_id' },
         });
+        const checkItem = await Borrow.find({user:req.user,status:"1"})
        
         if(!item){
             const error = new Error('ยังไม่มีรายการ')
             error.statusCode = 404;
             throw error; 
-        }else{
+        }else if(checkItem.length > 0){
+            const error = new Error('ยังมีรายการ รออนุมัติอยู่');
+            error.statusCode = 500;
+            throw error;
+        }else if(checkItem == ''){
             item.status = 1;
             await item.save();
             res.status(200).json({message:'ทำการยืม/รออนุมัติ'})
