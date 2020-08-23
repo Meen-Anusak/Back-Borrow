@@ -144,7 +144,7 @@ exports.borrow = async(req,res,next)=>{
             populate: { path: 'p_id' },
         });
         const checkItem = await Borrow.find({user:req.user,status:"1"})
-       
+        console.log(item.status)
         if(!item){
             const error = new Error('ยังไม่มีรายการ')
             error.statusCode = 404;
@@ -164,7 +164,14 @@ exports.borrow = async(req,res,next)=>{
 }
 exports.waitBorrow = async(req,res,next)=>{
     try {
-        const item = await Borrow.findOne({ user: req.user,status:"1" }).populate('user', '-password -_id').populate({
+        let user = '';
+
+        if(req.body.user_id != undefined ){
+            user = req.body.user_id
+        }else{
+            user = req.user
+        }
+        const item = await Borrow.findOne({ user: user,status:"1" }).populate('user', '-password -_id').populate({
             path: 'items',
             populate: { path: 'p_id' },
         });
@@ -185,6 +192,37 @@ exports.waitBorrow = async(req,res,next)=>{
             res.status(200).json({data:{data_items,total,product_id,user}})
         }
        
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.getwaitBorrow = async(req,res,next)=>{
+    try {
+        const product = await Borrow.find().where({status:"1"}).populate('user', '-password').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        if(product){
+            res.json(product)
+        }else{
+            const error = new Error('ยังไม่มีรายการยืม');
+            throw error;
+        }
+    } catch (error) {
+    }
+}
+
+exports.Allow = async(req,res,next)=>{
+    try {
+            const {productId} = req.body;
+            const product = await Borrow.findById(productId)
+            if(product){
+                product.status = '2'
+                await product.save()
+
+                res.status(200).json({message:"อนุมัติเรียบร้อย"})
+            }
     } catch (error) {
         next(error)
     }
