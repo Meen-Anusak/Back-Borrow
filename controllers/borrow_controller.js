@@ -144,12 +144,12 @@ exports.borrow = async(req,res,next)=>{
             populate: { path: 'p_id' },
         });
         const checkItem = await Borrow.find({user:req.user,status:"1"})
-        console.log(item.status)
+        
         if(!item){
             const error = new Error('ยังไม่มีรายการ')
             error.statusCode = 404;
             throw error; 
-        }else if(checkItem.length > 0){
+        }else if(checkItem.length > 0 ){
             const error = new Error('ยังมีรายการ รออนุมัติอยู่');
             error.statusCode = 500;
             throw error;
@@ -164,13 +164,8 @@ exports.borrow = async(req,res,next)=>{
 }
 exports.waitBorrow = async(req,res,next)=>{
     try {
-        let user = '';
-
-        if(req.body.user_id != undefined ){
-            user = req.body.user_id
-        }else{
-            user = req.user
-        }
+        let user = req.user._id;
+    
         const item = await Borrow.findOne({ user: user,status:"1" }).populate('user', '-password -_id').populate({
             path: 'items',
             populate: { path: 'p_id' },
@@ -223,6 +218,130 @@ exports.Allow = async(req,res,next)=>{
 
                 res.status(200).json({message:"อนุมัติเรียบร้อย"})
             }
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.getReturnItemByUser = async(req,res,next)=>{
+    try {
+        const userID = req.user._id;
+        const item = await Borrow.findOne({ user: userID,status:"2" }).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        if(!item){
+            const error = new Error('ไม่พบรายการ');
+            error.status_code = 404;
+            throw error;
+        }else{
+            const product_id = item._id
+            const user = item.user;
+            let data_items = item.items
+            let num = await data_items.map((s)=>{
+                return s.qty
+            })
+           let total =  await num.reduce((sum,number)=>{
+                return sum + number
+            },0)
+            res.status(200).json({data:{data_items,total,product_id,user}})
+        }
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.showItemByUser = async(req,res,next)=>{
+    try {
+        const productId = req.params.id;
+        console.log(productId)
+        const item = await Borrow.findOne({ _id: productId }).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        if(!item){
+            const error = new Error('ไม่พบรายการ');
+            error.status_code = 404;
+            throw error;
+        }else{
+            const product_id = item._id
+            const user = item.user;
+            let data_items = item.items
+            let num = await data_items.map((s)=>{
+                return s.qty
+            })
+           let total =  await num.reduce((sum,number)=>{
+                return sum + number
+            },0)
+            res.status(200).json({data:{data_items,total,product_id,user}})
+        }
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.getReturnBorrow = async(req,res,next)=>{
+    try {
+        const product = await Borrow.find().where({status:'2'}).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        res.status(200).json(product);
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+exports.returnTostore = async(req,res,next)=>{
+    try {
+        const {productId} = req.body;
+
+        const product = await Borrow.findById(productId);
+        if(product){
+            product.status = '3';
+            await product.save()
+            res.json({message:'คืนอุปกรณ์เรียบร้อย'})
+        }
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.getProductReturn = async(req,res,next)=>{
+    try {
+
+        const product = await Borrow.find().where({status:'3'}).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });;
+        if(product){
+            res.status(200).json(product)
+        }else{
+            const error = new Error('ไม่พบรายการ');
+            throw error;
+        }
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.getProductReturnByUser = async(req,res,next)=>{
+    try {
+        const userId = req.user._id;
+
+        const product = await Borrow.find({user:userId}).where({status:'3'}).populate('user', '-password -_id').populate({
+            path: 'items',
+            populate: { path: 'p_id' },
+        });
+        if(product){
+            res.status(200).json(product)
+        }else{
+            const error = new Error('ไม่พบรายการ');
+            throw error;
+        }
+
     } catch (error) {
         next(error)
     }
